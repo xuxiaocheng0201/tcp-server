@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * 拆分逻辑到network.rs中。
+* recv函数内记录超时，简化返回值处理
+
+### Fixed
+
+* 支持自定义Identifier。
 
 ## [0.0.1] - 2023-12-28
 

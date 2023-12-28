@@ -1,7 +1,7 @@
+use std::io::{Error, ErrorKind};
 use std::net::SocketAddr;
 use std::ops::Add;
 use std::time::Duration;
-use anyhow::Result;
 use log::{debug, error, info, trace};
 use tcp_handler::bytes::{Buf, Bytes, BytesMut};
 use tcp_handler::common::{AesCipher, PacketError};
@@ -20,19 +20,23 @@ use crate::configuration::{get_addr, get_connect_sec, get_idle_sec};
 use crate::Server;
 
 #[inline]
-pub async fn send<W: AsyncWriteExt + Unpin + Send>(stream: &mut W, message: &Bytes, cipher: AesCipher, level: Compression) -> std::result::Result<AesCipher, PacketError> {
+pub async fn send<W: AsyncWriteExt + Unpin + Send>(stream: &mut W, message: &Bytes, cipher: AesCipher, level: Compression) -> Result<AesCipher, PacketError> {
     tcp_handler::compress_encrypt::send(stream, message, cipher, level).await
 }
 
 #[inline]
-pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher, time: Duration) -> Option<std::result::Result<(BytesMut, AesCipher), PacketError>> {
-    select! {
-        c = tcp_handler::compress_encrypt::recv(stream, cipher) => Some(c),
-        _ = sleep(time) => None,
+pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher, timeout: Option<(SocketAddr, Duration)>) -> Result<(BytesMut, AesCipher), PacketError> {
+    if let Some((addr, time)) = timeout {
+        select! {
+            c = tcp_handler::compress_encrypt::recv(stream, cipher) => c,
+            _ = sleep(time) => Err(PacketError::IO(Error::new(ErrorKind::TimedOut, format!("Recv timeout: {}. timeout: {:?}", addr, time)))),
+        }
+    } else {
+        tcp_handler::compress_encrypt::recv(stream, cipher).await
     }
 }
 
-pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, identifier: &'static str) -> Result<()> {
+pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, identifier: &'static str) -> anyhow::Result<()> {
     let cancel_token = CancellationToken::new();
     let canceller = cancel_token.clone();
     spawn(async move {
@@ -72,7 +76,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, ident
     Ok(())
 }
 
-async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken, identifier: &str) -> Result<()> {
+async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken, identifier: &str) -> anyhow::Result<()> {
     let (mut receiver, mut sender)= client.into_split();
     let mut version = None;
     let connect_sec = get_connect_sec();
@@ -99,21 +103,15 @@ async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream
         let idle_sec = get_idle_sec();
         let mut data = select! {
             _ = cancel_token.cancelled() => { return Ok(()); },
-            d = recv(&mut receiver, cipher, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))) => match d {
-                Some(d) => match d {
-                    Ok((d, c)) => { cipher = c; d.reader() },
-                    Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
-                },
-                None => {
-                    debug!("Read timeout: {}. duration: {} secs.", address, idle_sec);
-                    return Ok(());
-                }
+            d = recv(&mut receiver, cipher, Some((address, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))))) => match d {
+                Ok((d, c)) => { cipher = c; d.reader() },
+                Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
             },
         };
         if let Some(func) = server.get_function(&data.read_string()?) {
             sender.write_bool(true).await?;
             sender.flush().await?;
-            cipher = func.handle(&mut receiver, &mut sender, cipher).await?;
+            cipher = func.handle(&mut receiver, &mut sender, cipher, address).await?;
             last_time = Instant::now();
         } else {
             sender.write_bool(false).await?;
