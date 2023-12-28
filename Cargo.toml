@@ -7,6 +7,16 @@ edition = "2021"
 
 [dependencies]
 log = "~0.4"
-tokio = { version = "^1.35", features = ["signal"]}
+anyhow = "^1.0"
+async-trait = "~0.1"
+tokio = { version = "^1.35", features = ["net", "signal", "time"] }
 tokio-util = { version = "~0.7", features = ["rt"] }
 tcp-handler = "~0.4"
+serde = { version = "^1.0", features = ["derive"], optional = true }
+
+[features]
+default = ["serde"]
+
+[dev-dependencies]
+env_logger = "~0.10"
+tokio = { version = "^1.35", features = ["rt-multi-thread", "macros"]}
