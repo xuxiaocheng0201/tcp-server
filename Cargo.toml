@@ -1,9 +1,15 @@
 [package]
 name = "tcp-server"
-version = "0.1.0"
+version = "0.0.1"
+authors = ["xuxiaocheng <2762267080@qq.com>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Convenient TCP server. Based on tcp-handler"
+readme = "README.md"
+license = "(MIT OR Apache-2.0) AND BSD-3-Clause"
+repository = "https://github.com/xuxiaocheng0201/tcp-handler/tree/server"
+documentation = "https://docs.rs/tcp-server/"
+categories = ["network-programming"]
+keywords = ["tcp", "network"]
 
 [dependencies]
 log = "~0.4"
