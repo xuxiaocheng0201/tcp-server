@@ -7,10 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* 使用宏创建Handler。
+
+### Changed
+
+* 拆分逻辑到network.rs中。
+
 ## [0.0.1] - 2023-12-28
 
 ### Added
 
-* 实现功能路由
-* 支持ctrl-c优雅关闭
-* 支持序列化配置
+* 实现功能路由。
+* 支持ctrl-c优雅关闭。
+* 支持序列化配置。
