@@ -17,7 +17,7 @@ anyhow = "^1.0"
 async-trait = "~0.1"
 tokio = { version = "^1.35", features = ["macros", "net", "signal", "time"] }
 tokio-util = { version = "~0.7", features = ["rt"] }
-tcp-handler = "~0.4"
+tcp-handler = "~0.5"
 serde = { version = "^1.0", features = ["derive"], optional = true }
 
 [features]
