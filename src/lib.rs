@@ -1,5 +1,6 @@
 pub mod configuration;
 
+pub extern crate async_trait;
 pub extern crate tcp_handler;
 #[cfg(feature = "serde")]
 pub extern crate serde;
@@ -10,9 +11,11 @@ use std::time::Duration;
 use anyhow::Result;
 use async_trait::async_trait;
 use log::{debug, error, info, trace};
-use tcp_handler::bytes::Buf;
-use tcp_handler::common::AesCipher;
-use tcp_handler::compress_encrypt::{recv, server_init, server_start};
+use tcp_handler::bytes::{Buf, Bytes, BytesMut};
+use tcp_handler::common::{AesCipher, PacketError};
+use tcp_handler::compress_encrypt::{server_init, server_start};
+use tcp_handler::flate2::Compression;
+use tcp_handler::variable_len_reader::asynchronous::AsyncVariableWritable;
 use tcp_handler::variable_len_reader::VariableReadable;
 use tokio::signal::ctrl_c;
 use tokio::time::{Instant, sleep};
@@ -76,6 +79,19 @@ pub trait Server {
     }
 }
 
+#[inline]
+pub async fn send<W: AsyncWriteExt + Unpin + Send>(stream: &mut W, message: &Bytes, cipher: AesCipher, level: Compression) -> std::result::Result<AesCipher, PacketError> {
+    tcp_handler::compress_encrypt::send(stream, message, cipher, level).await
+}
+
+#[inline]
+pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher, time: Duration) -> Option<std::result::Result<(BytesMut, AesCipher), PacketError>> {
+    select! {
+        c = tcp_handler::compress_encrypt::recv(stream, cipher) => Some(c),
+        _ = sleep(time) => None,
+    }
+}
+
 async fn handle(server: &'static (impl Server + ?Sized), client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> Result<()> {
     let (mut receiver, mut sender)= client.into_split();
     let mut version = None;
@@ -103,23 +119,25 @@ async fn handle(server: &'static (impl Server + ?Sized), client: TcpStream, addr
         let idle_sec = get_idle_sec();
         let mut data = select! {
             _ = cancel_token.cancelled() => { return Ok(()); },
-            _ = sleep(Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))) => {
-                debug!("Idle timeout: {}, {} secs.", address, idle_sec);
-                return Ok(());
-            },
-            d = recv(&mut receiver, cipher) => match d {
-                Ok((d, c)) => { cipher = c; d.reader() },
-                Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
+            d = recv(&mut receiver, cipher, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))) => match d {
+                Some(d) => match d {
+                    Ok((d, c)) => { cipher = c; d.reader() },
+                    Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
+                },
+                None => {
+                    debug!("Read timeout: {}. duration: {} secs.", address, idle_sec);
+                    return Ok(());
+                }
             },
         };
-        let func = data.read_string()?;
-        let func = server.get_function(&func);
-        cipher = if let Some(func) = func {
-            let cipher = func.handle(&mut receiver, &mut sender, cipher).await?;
+        if let Some(func) = server.get_function(&data.read_string()?) {
+            sender.write_bool(true).await?;
+            sender.flush().await?;
+            cipher = func.handle(&mut receiver, &mut sender, cipher).await?;
             last_time = Instant::now();
-            cipher
         } else {
-            todo!()
+            sender.write_bool(false).await?;
+            sender.flush().await?;
         }
     }
 }
