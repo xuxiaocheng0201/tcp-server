@@ -7,6 +7,6 @@
 
 # 描述
 
-基于 [tcp-handler](https://crates.io/crates/tcp-server)。
+基于 [tcp-handler](https://crates.io/crates/tcp-handler)。
 
 暂时还没有准备好在生产环境中使用

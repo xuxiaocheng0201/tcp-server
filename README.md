@@ -7,6 +7,6 @@
 
 # Description
 
-Based on [tcp-handler](https://crates.io/crates/tcp-server).
+Based on [tcp-handler](https://crates.io/crates/tcp-handler).
 
 Not ready to use in production.
