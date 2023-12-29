@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* 更新依赖版本。
+* 配置部分使用`Either`而不是`Result`。
+
 ## [0.0.2] - 2023-12-28
 
 ### Added
