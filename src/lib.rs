@@ -30,7 +30,7 @@ macro_rules! func_handler {
         $vi struct $name;
         #[$crate::async_trait::async_trait]
         impl<R: $crate::tokio::io::AsyncReadExt + Unpin + Send, W: $crate::tokio::io::AsyncWriteExt + Unpin + Send> $crate::FuncHandler<R, W> for $name {
-            async fn handle(&self, $receiver: &mut R, $sender: &mut W, $cipher: $crate::tcp_handler::common::AesCipher, $addr: std::net::SocketAddr) -> $crate::anyhow::Result<AesCipher> {
+            async fn handle(&self, $receiver: &mut R, $sender: &mut W, $cipher: $crate::tcp_handler::common::AesCipher, $addr: std::net::SocketAddr) -> $crate::anyhow::Result<$crate::tcp_handler::common::AesCipher> {
                 $block
             }
         }

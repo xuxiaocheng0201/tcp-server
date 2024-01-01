@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use std::ops::Add;
 use std::time::Duration;
 use log::{debug, error, info, trace};
-use tcp_handler::bytes::{Buf, Bytes, BytesMut};
+use tcp_handler::bytes::{Buf, BytesMut};
 use tcp_handler::common::{AesCipher, PacketError};
 use tcp_handler::compress_encrypt::{server_init, server_start};
 use tcp_handler::flate2::Compression;
@@ -20,7 +20,7 @@ use crate::configuration::{get_addr, get_connect_sec, get_idle_sec};
 use crate::Server;
 
 #[inline]
-pub async fn send<W: AsyncWriteExt + Unpin + Send>(stream: &mut W, message: &Bytes, cipher: AesCipher, level: Compression) -> Result<AesCipher, PacketError> {
+pub async fn send<W: AsyncWriteExt + Unpin + Send, B: Buf>(stream: &mut W, message: &mut B, cipher: AesCipher, level: Compression) -> Result<AesCipher, PacketError> {
     tcp_handler::compress_encrypt::send(stream, message, cipher, level).await
 }
 

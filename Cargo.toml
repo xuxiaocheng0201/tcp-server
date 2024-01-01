@@ -9,7 +9,7 @@ license = "(MIT OR Apache-2.0) AND BSD-3-Clause"
 repository = "https://github.com/xuxiaocheng0201/tcp-handler/tree/server"
 documentation = "https://docs.rs/tcp-server/"
 categories = ["network-programming"]
-keywords = ["tcp", "network"]
+keywords = ["tcp", "network", "server"]
 
 [dependencies]
 log = "~0.4"
