@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* 添加默认版本判断实现。
+
 ### Changed
 
 * 更新依赖版本。
-* 配置部分使用`Either`而不是`Result`。
+* 简化配置addr部分。
 
 ## [0.0.2] - 2023-12-28
 

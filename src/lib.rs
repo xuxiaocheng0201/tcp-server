@@ -41,7 +41,9 @@ macro_rules! func_handler {
 pub trait Server {
     fn get_identifier(&self) -> &'static str;
 
-    fn check_version(&self, version: &str) -> bool;
+    fn check_version(&self, version: &str) -> bool {
+        version == env!("CARGO_PKG_VERSION")
+    }
 
     fn get_function<R, W>(&self, func: &str) -> Option<Box<dyn FuncHandler<R, W>>>
         where R: AsyncReadExt + Unpin + Send, W: AsyncWriteExt + Unpin + Send;
