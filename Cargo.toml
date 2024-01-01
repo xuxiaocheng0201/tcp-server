@@ -15,6 +15,7 @@ keywords = ["tcp", "network", "server"]
 log = "~0.4"
 anyhow = "^1.0"
 async-trait = "~0.1"
+lazy_static = "^1.4"
 tokio = { version = "^1.35", features = ["macros", "net", "signal", "time"] }
 tokio-util = { version = "~0.7", features = ["rt"] }
 tcp-handler = "~0.5"
