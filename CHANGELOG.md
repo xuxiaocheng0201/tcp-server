@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* Handler参数增加version字段。
+* 更新依赖版本。
+
 ## [0.0.3] - 2024-1-1
 
 ### Added

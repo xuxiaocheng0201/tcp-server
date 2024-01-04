@@ -111,7 +111,7 @@ async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream
         if let Some(func) = server.get_function(&data.read_string()?) {
             sender.write_bool(true).await?;
             sender.flush().await?;
-            cipher = func.handle(&mut receiver, &mut sender, cipher, address).await?;
+            cipher = func.handle(&mut receiver, &mut sender, cipher, address, &version).await?;
             last_time = Instant::now();
         } else {
             sender.write_bool(false).await?;

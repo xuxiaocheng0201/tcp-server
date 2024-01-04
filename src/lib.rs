@@ -21,16 +21,16 @@ pub use network::{send, recv};
 
 #[async_trait]
 pub trait FuncHandler<R, W>: Send where R: AsyncReadExt + Unpin + Send, W: AsyncWriteExt + Unpin + Send {
-    async fn handle(&self, receiver: &mut R, sender: &mut W, cipher: AesCipher, addr: SocketAddr) -> Result<AesCipher>;
+    async fn handle(&self, receiver: &mut R, sender: &mut W, cipher: AesCipher, addr: SocketAddr, version: &str) -> Result<AesCipher>;
 }
 
 #[macro_export]
 macro_rules! func_handler {
-    ($vi: vis $name: ident, |$receiver: ident, $sender: ident, $cipher: ident, $addr: ident| $block: expr) => {
+    ($vi: vis $name: ident, |$receiver: ident, $sender: ident, $cipher: ident, $addr: ident, $version: ident| $block: expr) => {
         $vi struct $name;
         #[$crate::async_trait::async_trait]
         impl<R: $crate::tokio::io::AsyncReadExt + Unpin + Send, W: $crate::tokio::io::AsyncWriteExt + Unpin + Send> $crate::FuncHandler<R, W> for $name {
-            async fn handle(&self, $receiver: &mut R, $sender: &mut W, $cipher: $crate::tcp_handler::common::AesCipher, $addr: std::net::SocketAddr) -> $crate::anyhow::Result<$crate::tcp_handler::common::AesCipher> {
+            async fn handle(&self, $receiver: &mut R, $sender: &mut W, $cipher: $crate::tcp_handler::common::AesCipher, $addr: std::net::SocketAddr, $version: &str) -> $crate::anyhow::Result<$crate::tcp_handler::common::AesCipher> {
                 $block
             }
         }
