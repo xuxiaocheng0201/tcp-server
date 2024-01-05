@@ -36,7 +36,7 @@ pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCip
     }
 }
 
-pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, identifier: &'static str) -> anyhow::Result<()> {
+pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> anyhow::Result<()> {
     let cancel_token = CancellationToken::new();
     let canceller = cancel_token.clone();
     spawn(async move {
@@ -64,7 +64,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, ident
                 let canceller = cancel_token.clone();
                 tasks.spawn(async move {
                     trace!("TCP stream connected from {}.", address);
-                    if let Err(e) = handle_client(s, client, address, canceller, identifier).await {
+                    if let Err(e) = handle_client(s, client, address, canceller).await {
                         error!("Failed to handle connection. address: {}, err: {}", address, e);
                     }
                     trace!("TCP stream disconnected from {}.", address);
@@ -76,7 +76,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S, ident
     Ok(())
 }
 
-async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken, identifier: &str) -> anyhow::Result<()> {
+async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> anyhow::Result<()> {
     let (mut receiver, mut sender)= client.into_split();
     let mut version = None;
     let connect_sec = get_connect_sec();
@@ -87,7 +87,7 @@ async fn handle_client<S: Server + ?Sized>(server: &'static S, client: TcpStream
             Err(())
         },
         c = async {
-            let init = server_init(&mut receiver, identifier, |v| {
+            let init = server_init(&mut receiver, server.get_identifier(), |v| {
                 version = Some(v.to_string());
                 server.check_version(v)
             }).await;

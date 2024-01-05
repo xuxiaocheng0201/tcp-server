@@ -27,3 +27,7 @@ default = ["serde"]
 [dev-dependencies]
 env_logger = "~0.10"
 tokio = { version = "^1.35", features = ["rt-multi-thread"]}
+tcp-client = "~0.0"
+
+[profile.dev.package.num-bigint-dig]
+opt-level = 3

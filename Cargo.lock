@@ -809,6 +809,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tcp-client"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c254b472b52fe205726ecaa7bbc5480f456bb0c05263ec8f0cddc78a2bcc0073"
+dependencies = [
+ "async-trait",
+ "lazy_static",
+ "serde",
+ "tcp-handler",
+ "tokio",
+]
+
+[[package]]
 name = "tcp-handler"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -835,6 +848,7 @@ dependencies = [
  "lazy_static",
  "log",
  "serde",
+ "tcp-client",
  "tcp-handler",
  "tokio",
  "tokio-util",

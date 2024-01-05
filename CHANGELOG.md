@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Handler参数增加version字段。
 * 更新依赖版本。
+* 添加连接测试
+
+### Removed
+
+* 移除默认版本判断实现，需子crate显式指定。
 
 ## [0.0.3] - 2024-1-1
 
