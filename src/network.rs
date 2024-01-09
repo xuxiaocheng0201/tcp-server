@@ -48,27 +48,27 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> an
     info!("Listening on {}.", server.local_addr()?);
     let tasks = TaskTracker::new();
     select! {
-            _ = cancel_token.cancelled() => {
-                info!("Shutting down the server gracefully...");
-            }
-            _ = async { loop {
-                let (client, address) = match server.accept().await {
-                    Ok(pair) => pair,
-                    Err(e) => {
-                        error!("Failed to accept connection: {}", e);
-                        continue;
-                    }
-                };
-                let canceller = cancel_token.clone();
-                tasks.spawn(async move {
-                    trace!("TCP stream connected from {}.", address);
-                    if let Err(e) = handle_client(s, client, address, canceller).await {
-                        error!("Failed to handle connection. address: {}, err: {}", address, e);
-                    }
-                    trace!("TCP stream disconnected from {}.", address);
-                });
-            } } => {}
+        _ = cancel_token.cancelled() => {
+            info!("Shutting down the server gracefully...");
         }
+        _ = async { loop {
+            let (client, address) = match server.accept().await {
+                Ok(pair) => pair,
+                Err(e) => {
+                    error!("Failed to accept connection: {}", e);
+                    continue;
+                }
+            };
+            let canceller = cancel_token.clone();
+            tasks.spawn(async move {
+                trace!("TCP stream connected from {}.", address);
+                if let Err(e) = handle_client(s, client, address, canceller).await {
+                    error!("Failed to handle connection. address: {}, err: {}", address, e);
+                }
+                trace!("TCP stream disconnected from {}.", address);
+            });
+        } } => {}
+    }
     tasks.close();
     tasks.wait().await;
     Ok(())

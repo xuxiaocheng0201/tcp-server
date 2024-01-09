@@ -59,54 +59,80 @@ pub trait Server {
 mod tests {
     use anyhow::Result;
     use env_logger::Target;
-    use tcp_client::ClientFactory;
+    use tcp_client::client_base::ClientBase;
+    use tcp_client::configuration::{Configuration as ClientConfiguration, set_config as set_client_config};
+    use tcp_client::quickly_connect;
+    use tcp_client::mutable_cipher::MutableCipher;
     use tcp_handler::common::AesCipher;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
     use tokio::net::TcpStream;
     use tokio::spawn;
     use crate::{FuncHandler, Server};
-    use crate::configuration::{Configuration, set_config};
+    use crate::configuration::{Configuration as ServerConfiguration, set_config as set_server_config};
 
     struct TestServer;
-    static TEST_SERVER: TestServer = TestServer;
 
     impl Server for TestServer {
         fn get_identifier(&self) -> &'static str {
             "tester"
         }
 
-        /// ```
         fn check_version(&self, version: &str) -> bool {
             version == env!("CARGO_PKG_VERSION")
         }
 
-        fn get_function<R, W>(&self, _func: &str) -> Option<Box<dyn FuncHandler<R, W>>> where R: AsyncReadExt + Unpin + Send, W: AsyncWriteExt + Unpin + Send {
-            None
+        fn get_function<R, W>(&self, func: &str) -> Option<Box<dyn FuncHandler<R, W>>> where R: AsyncReadExt + Unpin + Send, W: AsyncWriteExt + Unpin + Send {
+            if func == "test" {
+                func_handler!(TestHandler, |_receiver, _sender, cipher, _addr, _version| {
+                    Ok(cipher)
+                });
+                Some(Box::new(TestHandler))
+            } else {
+                None
+            }
         }
     }
 
-    type TestClient = (TcpStream, AesCipher);
-    struct TestClientFactory;
+    struct TestClient(OwnedReadHalf, OwnedWriteHalf, MutableCipher);
 
-    impl ClientFactory<TestClient> for TestClientFactory {
-        fn get_identifier(&self) -> &'static str {
-            "tester"
-        }
-
-        fn get_version(&self) -> &'static str {
-            env!("CARGO_PKG_VERSION")
+    impl From<(TcpStream, AesCipher)> for TestClient {
+        fn from(value: (TcpStream, AesCipher)) -> Self {
+            let (receiver, sender) = value.0.into_split();
+            Self(receiver, sender, MutableCipher::new(value.1))
         }
     }
+
+    impl ClientBase<OwnedReadHalf, OwnedWriteHalf> for TestClient {
+        fn get_receiver<'a>(&'a mut self) -> (&'a mut OwnedReadHalf, &MutableCipher) {
+            (&mut self.0, &self.2)
+        }
+
+        fn get_sender<'a>(&'a mut self) -> (&'a mut OwnedWriteHalf, &MutableCipher) {
+            (&mut self.1, &self.2)
+        }
+    }
+
+    static TEST_SERVER: TestServer = TestServer;
 
     #[tokio::test]
     async fn test() -> Result<()> {
         env_logger::builder().parse_filters("trace").target(Target::Stderr).try_init()?;
-        set_config(Configuration {
+        set_server_config(ServerConfiguration {
             addr: "localhost:25565".to_string(),
-            ..Configuration::default()
+            connect_sec: 5,
+            idle_sec: 3,
         });
+        set_client_config(ClientConfiguration {
+            connect_sec: 5,
+            idle_sec: 3,
+        });
+
         let server = spawn(TEST_SERVER.start());
-        TestClientFactory.connect("localhost:25565").await?;
+        let mut client: TestClient = quickly_connect("tester", env!("CARGO_PKG_VERSION"), "localhost:25565").await?;
+
+        client.check_func("test").await?;
+
         server.abort();
         Ok(())
     }
