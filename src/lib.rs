@@ -57,6 +57,7 @@ pub trait Server {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use anyhow::Result;
     use env_logger::Target;
     use tcp_client::client_base::ClientBase;
@@ -68,6 +69,7 @@ mod tests {
     use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
     use tokio::net::TcpStream;
     use tokio::spawn;
+    use tokio::time::sleep;
     use crate::{FuncHandler, Server};
     use crate::configuration::{Configuration as ServerConfiguration, set_config as set_server_config};
 
@@ -120,11 +122,11 @@ mod tests {
         env_logger::builder().parse_filters("trace").target(Target::Stderr).try_init()?;
         set_server_config(ServerConfiguration {
             addr: "localhost:25565".to_string(),
-            connect_sec: 5,
+            connect_sec: 10,
             idle_sec: 3,
         });
         set_client_config(ClientConfiguration {
-            connect_sec: 5,
+            connect_sec: 10,
             idle_sec: 3,
         });
 
@@ -132,6 +134,9 @@ mod tests {
         let mut client: TestClient = quickly_connect("tester", env!("CARGO_PKG_VERSION"), "localhost:25565").await?;
 
         client.check_func("test").await?;
+
+        drop(client);
+        sleep(Duration::from_secs(1)).await; // Waiting for all log printing to complete.
 
         server.abort();
         Ok(())

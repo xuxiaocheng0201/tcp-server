@@ -1,4 +1,5 @@
 use std::io::{Error, ErrorKind};
+use std::io::ErrorKind::UnexpectedEof;
 use std::net::SocketAddr;
 use std::ops::Add;
 use std::time::Duration;
@@ -103,7 +104,15 @@ async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, addres
             d = recv(&mut receiver, cipher, Some((address, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))))) => d,
         } {
             Ok((d, c)) => { cipher = c; d.reader() },
-            Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
+            Err(e) => {
+                if let PacketError::IO(ref e) = e {
+                    if e.kind() == UnexpectedEof {
+                        return Ok(()); // Ignore 'early eof'.
+                    }
+                }
+                trace!("Error receiving data. address: {}, err: {:?}", address, e);
+                return Ok(());
+            }
         };
         if let Some(func) = server.get_function(&data.read_string()?) {
             sender.write_bool(true).await?;
