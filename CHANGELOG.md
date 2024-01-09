@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2024-1-9
+
+### Added
+
+* 添加测试
+
+### Fixed
+
+* 使用timeout，优化性能。
+
 ## [0.0.5] - 2024-1-5
 
 ### Added
