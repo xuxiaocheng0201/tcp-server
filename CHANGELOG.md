@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2024-1-9
+
+### Changed
+
+* 修改Configuration名称，避免与其他crate中的同名类型混淆。
+
+### Fixed
+
+* 忽略正常关闭时的UnexpectedEof日志。
+* 确认功能可用。
+
 ## [0.0.6] - 2024-1-9
 
 ### Added
