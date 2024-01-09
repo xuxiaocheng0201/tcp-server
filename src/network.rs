@@ -17,7 +17,7 @@ use tokio::{select, spawn};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
-use crate::configuration::{get_addr, get_connect_sec, get_idle_sec};
+use crate::configuration::{get_server_addr, get_server_connect_sec, get_server_idle_sec};
 use crate::Server;
 
 #[inline]
@@ -45,7 +45,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> an
             canceller.cancel();
         }
     });
-    let server = TcpListener::bind(get_addr()).await?;
+    let server = TcpListener::bind(get_server_addr()).await?;
     info!("Listening on {}.", server.local_addr()?);
     let tasks = TaskTracker::new();
     select! {
@@ -78,7 +78,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> an
 async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> anyhow::Result<()> {
     let (mut receiver, mut sender)= client.into_split();
     let mut version = None;
-    let connect_sec = get_connect_sec();
+    let connect_sec = get_server_connect_sec();
     let mut cipher = match select! {
         _ = cancel_token.cancelled() => { Err(()) },
         c = timeout(Duration::from_secs(connect_sec), async {
@@ -98,7 +98,7 @@ async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, addres
     debug!("Client connected from {}. version: {}", address, version);
     let mut last_time = Instant::now();
     loop {
-        let idle_sec = get_idle_sec();
+        let idle_sec = get_server_idle_sec();
         let mut data = match select! {
             _ = cancel_token.cancelled() => { return Ok(()); },
             d = recv(&mut receiver, cipher, Some((address, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))))) => d,

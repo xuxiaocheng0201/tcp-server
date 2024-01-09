@@ -71,7 +71,7 @@ mod tests {
     use tokio::spawn;
     use tokio::time::sleep;
     use crate::{FuncHandler, Server};
-    use crate::configuration::{Configuration as ServerConfiguration, set_config as set_server_config};
+    use crate::configuration::{ServerConfiguration as ServerConfiguration, set_server_config as set_server_config};
 
     struct TestServer;
 
