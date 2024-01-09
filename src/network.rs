@@ -14,7 +14,7 @@ use tokio::signal::ctrl_c;
 use tokio::time::{Instant, timeout};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::{select, spawn};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use crate::configuration::{get_server_addr, get_server_connect_sec, get_server_idle_sec};
@@ -76,7 +76,9 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> an
 }
 
 async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> anyhow::Result<()> {
-    let (mut receiver, mut sender)= client.into_split();
+    let (receiver, sender)= client.into_split();
+    let mut receiver = BufReader::new(receiver);
+    let mut sender = BufWriter::new(sender);
     let mut version = None;
     let connect_sec = get_server_connect_sec();
     let mut cipher = match select! {
