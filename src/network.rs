@@ -10,7 +10,7 @@ use tcp_handler::flate2::Compression;
 use tcp_handler::variable_len_reader::asynchronous::AsyncVariableWritable;
 use tcp_handler::variable_len_reader::VariableReadable;
 use tokio::signal::ctrl_c;
-use tokio::time::{Instant, sleep};
+use tokio::time::{Instant, timeout};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::{select, spawn};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -25,12 +25,10 @@ pub async fn send<W: AsyncWriteExt + Unpin + Send, B: Buf>(stream: &mut W, messa
 }
 
 #[inline]
-pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher, timeout: Option<(SocketAddr, Duration)>) -> Result<(BytesMut, AesCipher), PacketError> {
-    if let Some((addr, time)) = timeout {
-        select! {
-            c = tcp_handler::compress_encrypt::recv(stream, cipher) => c,
-            _ = sleep(time) => Err(PacketError::IO(Error::new(ErrorKind::TimedOut, format!("Recv timeout: {}. timeout: {:?}", addr, time)))),
-        }
+pub async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher, time: Option<(SocketAddr, Duration)>) -> Result<(BytesMut, AesCipher), PacketError> {
+    if let Some((addr, time)) = time {
+        timeout(time, tcp_handler::compress_encrypt::recv(stream, cipher)).await
+            .map_err(|_| PacketError::IO(Error::new(ErrorKind::TimedOut, format!("Recv timeout: {}. timeout: {:?}", addr, time))))?
     } else {
         tcp_handler::compress_encrypt::recv(stream, cipher).await
     }
@@ -82,11 +80,7 @@ async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, addres
     let connect_sec = get_connect_sec();
     let mut cipher = match select! {
         _ = cancel_token.cancelled() => { Err(()) },
-        _ = sleep(Duration::from_secs(connect_sec)) => {
-            debug!("Connection timeout: {}, {} secs.", address, connect_sec);
-            Err(())
-        },
-        c = async {
+        c = timeout(Duration::from_secs(connect_sec), async {
             let init = server_init(&mut receiver, server.get_identifier(), |v| {
                 version = Some(v.to_string());
                 server.check_version(v)
@@ -94,19 +88,22 @@ async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, addres
             server_start(&mut sender, init).await.map_err(|e| {
                 trace!("Error connection client. address: {}, err: {:?}", address, e)
             })
-        } => c,
-    } { Ok(c) => c, Err(_) => return Ok(()), };
+        }) => c.unwrap_or_else(|_| {
+            debug!("Connection timeout: {}, {} secs.", address, connect_sec);
+            Err(())
+        }),
+    } { Ok(c) => c, Err(_) => return Ok(()) };
     let version = version.unwrap();
     debug!("Client connected from {}. version: {}", address, version);
     let mut last_time = Instant::now();
     loop {
         let idle_sec = get_idle_sec();
-        let mut data = select! {
+        let mut data = match select! {
             _ = cancel_token.cancelled() => { return Ok(()); },
-            d = recv(&mut receiver, cipher, Some((address, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))))) => match d {
-                Ok((d, c)) => { cipher = c; d.reader() },
-                Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
-            },
+            d = recv(&mut receiver, cipher, Some((address, Instant::now().duration_since(last_time).add(Duration::from_secs(idle_sec))))) => d,
+        } {
+            Ok((d, c)) => { cipher = c; d.reader() },
+            Err(e) => { trace!("Error receiving data. address: {}, err: {:?}", address, e); return Ok(()); }
         };
         if let Some(func) = server.get_function(&data.read_string()?) {
             sender.write_bool(true).await?;
