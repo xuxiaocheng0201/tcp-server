@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * 使用BufReader/BufWriter包装
+* 更新依赖。
 
 ## [0.1.0] - 2024-1-9
 
