@@ -24,6 +24,7 @@ serde = { version = "^1", features = ["derive"], optional = true }
 
 [features]
 default = []
+serde = ["dep:serde", "tcp-handler/serde"]
 
 [build-dependencies]
 reportme = "~0.2"

@@ -307,9 +307,9 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eeb342678d785662fd2514be38c459bb925f02b68dd2a3e0f21d7ef82d979dd"
+checksum = "05e7cf40684ae96ade6232ed84582f40ce0a66efcd43a5117aef610534f8e0b8"
 dependencies = [
  "anstream",
  "anstyle",
@@ -819,18 +819,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.195"
+version = "1.0.196"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63261df402c67811e9ac6def069e4786148c4563f4b50fd4bf30aa370d626b02"
+checksum = "870026e60fa08c69f064aa766c10f10b1d62db9ccd4d0abb206472bee0ce3b32"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.195"
+version = "1.0.196"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46fe8f8603d81ba86327b23a2e9cdf49e1255fb94a4c5f297f6ee0547178ea2c"
+checksum = "33c85360c95e7d137454dc81d9a4ed2b8efd8fbe19cee57357b32b9771fccb67"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -839,9 +839,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.111"
+version = "1.0.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "176e46fa42316f18edd598015a5166857fc835ec732f5215eac6b7bdbf0a84f4"
+checksum = "4d1bd37ce2324cf3bf85e5a25f96eb4baf0d5aa6eba43e7ae8958870c4ec48ed"
 dependencies = [
  "itoa",
  "ryu",
@@ -944,9 +944,9 @@ dependencies = [
 
 [[package]]
 name = "tcp-client"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24cf6fe50461fdfb6d1580002a5f8fe98876687581c046de7a00bb442caafc7f"
+checksum = "3ad8eb78612c6d20131defeaf21b9e6309edb74eccecbeb655276d8c25a120e2"
 dependencies = [
  "async-trait",
  "reportme",
@@ -957,9 +957,9 @@ dependencies = [
 
 [[package]]
 name = "tcp-handler"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32eb3f9e9bdfb7cc1fc759b615314014e515342c87f9ead2e76d65955df75706"
+checksum = "b40472ed6bdc71c4f0b63a46ad8394e9f58d4714c05a8724b89a7d12d7475f85"
 dependencies = [
  "aead",
  "aes-gcm",
@@ -967,6 +967,7 @@ dependencies = [
  "flate2",
  "reportme",
  "rsa",
+ "serde",
  "sha2",
  "thiserror",
  "tokio",
@@ -1149,9 +1150,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "variable-len-reader"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "622f1e906d7f85f607ab7cb8c270ee10330af1edd99bd6547479602eed96ac4b"
+checksum = "dc852a42e6ce9d73bbe183a804a5bef23d421b19024593db308d308f2c71b6bc"
 dependencies = [
  "bytes",
  "pin-project-lite",
