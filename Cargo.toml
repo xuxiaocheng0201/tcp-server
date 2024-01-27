@@ -36,3 +36,10 @@ tcp-client = "~0.1"
 
 [profile.dev.package.num-bigint-dig]
 opt-level = 3
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.playground]
+features = ["default", "serde"]

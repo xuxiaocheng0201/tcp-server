@@ -97,10 +97,10 @@ pub trait Server {
         Ok(())
     }
 
-    /// Start the server. This method will **block** the caller thread.
+    /// Start the server. This method will block the caller thread.
     ///
     /// It **only** will return an error if the server cannot start.
-    /// If you want to handle errors returned by [`FuncHandler`], you should use [`Server::handle_error`].
+    /// If you want to handle errors returned by [`FuncHandler`], you should override [`Server::handle_error`].
     async fn start(&'static self) -> std::io::Result<()> {
         start_server(self).await
     }
