@@ -1,6 +1,6 @@
 [package]
 name = "tcp-server"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["xuxiaocheng <2762267080@qq.com>"]
 edition = "2021"
 description = "Convenient TCP server. Based on tcp-handler"
@@ -16,18 +16,24 @@ log = "~0.4"
 anyhow = "^1.0"
 async-trait = "~0.1"
 lazy_static = "^1.4"
+thiserror = "^1.0"
 tokio = { version = "^1.35", features = ["macros", "net", "signal", "time"] }
 tokio-util = { version = "~0.7", features = ["rt"] }
 tcp-handler = "~0.5"
 serde = { version = "^1.0", features = ["derive"], optional = true }
+#metrics = { version = "~0.22", optional = true }
+#tracing = { version = "~0.1", optional = true }
 
 [features]
 default = ["serde"]
 
+[build-dependencies]
+reportme = "~0.2"
+
 [dev-dependencies]
 env_logger = "~0.11"
 tokio = { version = "^1.35", features = ["rt-multi-thread"]}
-tcp-client = "~0.0"
+tcp-client = "~0.1"
 
 [profile.dev.package.num-bigint-dig]
 opt-level = 3
