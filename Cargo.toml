@@ -1,6 +1,6 @@
 [package]
 name = "tcp-server"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["xuxiaocheng <2762267080@qq.com>"]
 edition = "2021"
 description = "Convenient server-side TCP service. Based on tcp-handler."
