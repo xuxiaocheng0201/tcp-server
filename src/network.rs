@@ -17,7 +17,7 @@ use tokio::{select, spawn};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
-use crate::config::{get_addr, get_connect_sec};
+use crate::config::{get_addr, get_connect_sec, get_idle_sec};
 use crate::handler_base::IOStream;
 use crate::Server;
 
@@ -46,27 +46,23 @@ pub enum NetworkError {
     /// In order not to panic, the stream marks as broken and this error is returned.
     #[error("Broken client.")]
     BrokenCipher(),
-
-    /// Returned by [`FuncHandler`][crate::handler_base::FuncHandler].
-    #[error("Handler error: {0}")]
-    HandlerError(#[from] anyhow::Error),
 }
 
 #[inline]
 pub(crate) async fn send<W: AsyncWriteExt + Unpin + Send, B: Buf + Send>(stream: &mut W, message: &mut B, cipher: AesCipher, level: Compression) -> Result<AesCipher, NetworkError> {
-    let idle = tcp_client::config::get_idle_sec();
+    let idle = get_idle_sec();
     timeout(Duration::from_secs(idle), tcp_handler::compress_encrypt::send(stream, message, cipher, level)).await
         .map_err(|_| NetworkError::Timeout(1, idle))?.map_err(|e| e.into())
 }
 
 #[inline]
 pub(crate) async fn recv<R: AsyncReadExt + Unpin + Send>(stream: &mut R, cipher: AesCipher) -> Result<(BytesMut, AesCipher), NetworkError> {
-    let idle = tcp_client::config::get_idle_sec();
+    let idle = get_idle_sec();
     timeout(Duration::from_secs(idle), tcp_handler::compress_encrypt::recv(stream, cipher)).await
         .map_err(|_| NetworkError::Timeout(2, idle))?.map_err(|e| e.into())
 }
 
-pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> std::io::Result<()> {
+pub(super) async fn start_server<S: Server + Sync + ?Sized>(s: &'static S) -> std::io::Result<()> {
     let cancel_token = CancellationToken::new();
     let canceller = cancel_token.clone();
     spawn(async move {
@@ -106,7 +102,7 @@ pub(super) async fn start_server<S: Server + ?Sized + Sync>(s: &'static S) -> st
     Ok(())
 }
 
-async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> Result<(), NetworkError> {
+async fn handle_client<S: Server + Sync + ?Sized>(server: &S, client: TcpStream, address: SocketAddr, cancel_token: CancellationToken) -> Result<(), NetworkError> {
     let (receiver, sender)= client.into_split();
     let mut receiver = BufReader::new(receiver);
     let mut sender = BufWriter::new(sender);
@@ -143,14 +139,17 @@ async fn handle_client<S: Server + ?Sized>(server: &S, client: TcpStream, addres
                 return Err(e.into());
             }
         };
-        let func = server.get_function(&data.read_string()?);
+        let func = data.read_string()?;
+        let function = server.get_function(&func);
         let mut writer = BytesMut::new().writer();
-        writer.write_bool(func.is_some())?;
+        writer.write_bool(function.is_some())?;
         cipher = send(sender, &mut writer.into_inner(), cipher, Compression::fast()).await?;
         (*guard).replace(cipher);
         drop(guard);
-        if let Some(func) = func {
-            func.handle(&mut stream).await?;
+        if let Some(function) = function {
+            if let Err(error) = function.handle(&mut stream).await {
+                server.handle_error(&func, error, &mut stream).await?;
+            }
         }
     }
 }
