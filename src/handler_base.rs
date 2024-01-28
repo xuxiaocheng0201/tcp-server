@@ -23,7 +23,7 @@ impl<R, W> IOStream<R, W> where R: AsyncReadExt + Unpin + Send, W: AsyncWriteExt
         Self { receiver, sender, cipher: MutableCipher::new(cipher), addr, version }
     }
 
-    /// Get the peer addr.
+    /// Get the addr of the client.
     pub fn get_addr(&self) -> &SocketAddr {
         &self.addr
     }

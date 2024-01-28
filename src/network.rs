@@ -108,7 +108,7 @@ async fn handle_client<S: Server + Sync + ?Sized>(server: &S, client: TcpStream,
     let mut sender = BufWriter::new(sender);
     let mut version = None;
     let connect = get_connect_sec();
-    let cipher = select! {
+    let cipher = match select! {
         _ = cancel_token.cancelled() => { return Ok(()); },
         c = timeout(Duration::from_secs(connect), async {
             let init = server_init(&mut receiver, server.get_identifier(), |v| {
@@ -116,8 +116,15 @@ async fn handle_client<S: Server + Sync + ?Sized>(server: &S, client: TcpStream,
                 server.check_version(v)
             }).await;
             server_start(&mut sender, init).await
-        }) => c.map_err(|_| NetworkError::Timeout(3, connect))??,
-    };
+        }) => c.map_err(|_| NetworkError::Timeout(3, connect))?,
+    } { Ok(cipher) => cipher, Err(e) => {
+        if let StarterError::IO(ref e) = e {
+            if e.kind() == ErrorKind::UnexpectedEof {
+                return Ok(()); // Ignore 'early eof'.
+            }
+        }
+        return Err(e.into());
+    } };
     let version = version.unwrap();
     debug!("Client connected from {}. version: {}", address, version);
     let mut stream = IOStream::new(receiver, sender, cipher, address, version);
