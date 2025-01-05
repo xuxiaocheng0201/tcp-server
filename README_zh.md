@@ -27,7 +27,7 @@ tcp-server = "~0.2"
 
 # 示例
 
-```rust,no-run
+```rust,no_run
 use tcp_server::{func_handler, Server};
 use tcp_server::anyhow::anyhow;
 use tcp_server::handler_base::FuncHandler;
