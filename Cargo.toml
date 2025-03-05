@@ -6,7 +6,7 @@ edition = "2021"
 description = "Convenient server-side TCP service. Based on tcp-handler."
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/xuxiaocheng0201/tcp-handler/tree/server"
+repository = "https://github.com/xuxiaocheng0201/tcp-server"
 documentation = "https://docs.rs/tcp-server/"
 categories = ["network-programming"]
 keywords = ["tcp", "network", "server"]
@@ -25,9 +25,6 @@ serde = { version = "^1", features = ["derive"], optional = true }
 [features]
 default = []
 serde = ["dep:serde", "tcp-handler/serde"]
-
-[build-dependencies]
-reportme = "~0.2"
 
 [dev-dependencies]
 env_logger = "~0.11"

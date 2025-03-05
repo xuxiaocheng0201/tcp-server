@@ -7,7 +7,7 @@ use log::{debug, error, info, trace};
 use tcp_handler::bytes::{Buf, BufMut, BytesMut};
 use tcp_handler::common::{AesCipher, PacketError, StarterError};
 use tcp_handler::compress_encrypt::{server_init, server_start};
-use tcp_handler::flate2::Compression;
+use tcp_handler::Compression;
 use tcp_handler::variable_len_reader::{VariableReader, VariableWriter};
 use thiserror::Error;
 use tokio::signal::ctrl_c;

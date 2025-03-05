@@ -5,7 +5,6 @@
 
 pub mod config;
 pub mod network;
-mod mutable_cipher;
 pub mod handler_base;
 
 pub extern crate anyhow;
